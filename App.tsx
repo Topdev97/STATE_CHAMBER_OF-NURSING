@@ -5,26 +5,25 @@
  * @format
  */
 
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Linking,
   Alert,
   View,
   StyleSheet,
   SafeAreaView,
-  StatusBar
+  StatusBar,
+  TouchableOpacity,
+  Text,
 } from 'react-native';
 
 import {InAppBrowser} from 'react-native-inappbrowser-reborn';
-// import {LogLevel, OneSignal} from 'react-native-onesignal';
-// import {OneSignal} from 'react-native-onesignal';
 import { WebView } from 'react-native-webview';
 import {OneSignal} from 'react-native-onesignal';
 
 function App(): React.JSX.Element {
-  const sleep = async (timeout: any) => {
-    return new Promise(resolve => setTimeout(resolve, timeout));
-  };
+  const webViewRef = useRef<WebView>(null);
+  const [canGoBack, setCanGoBack] = React.useState(false);
   const hideSearchInputJS = `
     (function() {
       var searchInput = document.querySelector('search[role="search"]');
@@ -78,13 +77,7 @@ function App(): React.JSX.Element {
   // };
 
   useEffect(() => {
-    // This runs only once, after the component mounts
-    // openLink();
-    // Remove this method to stop OneSignal Debugging
-    // OneSignal.Debug.setLogLevel(LogLevel.Verbose);
-
     // OneSignal Initialization
-
     OneSignal.initialize('8c17c838-c4d6-4856-8879-5439e5f10cb3');
 
     // requestPermission will show the native iOS or Android notification permission prompt.
@@ -95,12 +88,14 @@ function App(): React.JSX.Element {
     OneSignal.Notifications.addEventListener('click', event => {
       console.log('OneSignal: notification clicked:', event);
     });
+
   }, []); // The empty array makes sure this effect runs only once (on mount)
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <WebView
+        ref = {webViewRef}
         source={{ uri: 'https://pflegekammer-rlp.de/' }}
         injectedJavaScript={hideSearchInputJS}
         javaScriptEnabled={true}
@@ -110,7 +105,15 @@ function App(): React.JSX.Element {
           const { nativeEvent } = syntheticEvent;
           Alert.alert("WebView Error", nativeEvent.description);
         }}
+        onNavigationStateChange={navState => {
+          setCanGoBack(navState.canGoBack);
+        }}
       />
+      {canGoBack && (
+        <TouchableOpacity style={styles.backButton} onPress={() => webViewRef.current?.goBack() }>
+            <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+      )}
   </SafeAreaView>
   );
 }
@@ -119,6 +122,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    backgroundColor: '#0d9ddb',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 12,
   },
 });
 
