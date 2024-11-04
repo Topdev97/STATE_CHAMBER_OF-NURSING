@@ -5,7 +5,7 @@
  * @format
  */
 
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Linking,
   Alert,
@@ -15,11 +15,12 @@ import {
   StatusBar,
   TouchableOpacity,
   Text,
+  Image
 } from 'react-native';
 
-import {InAppBrowser} from 'react-native-inappbrowser-reborn';
+
 import { WebView } from 'react-native-webview';
-import {OneSignal} from 'react-native-onesignal';
+import { OneSignal } from 'react-native-onesignal';
 
 function App(): React.JSX.Element {
   const webViewRef = useRef<WebView>(null);
@@ -32,6 +33,8 @@ function App(): React.JSX.Element {
       }
     })();
   `;
+
+  const [isLoading, setIsLoading] = useState(true);
   // const openLink = async () => {
   //   try {
   //     const url = 'https://pflegekammer-rlp.de/';
@@ -89,39 +92,71 @@ function App(): React.JSX.Element {
       console.log('OneSignal: notification clicked:', event);
     });
 
-  }, []); // The empty array makes sure this effect runs only once (on mount)
+
+    
+
+    const initLoading = setTimeout(() => {
+      setIsLoading(false);
+    }, 5000);
+
+    return () =>clearTimeout(initLoading);
+
+  }, []); 
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <WebView
-        ref = {webViewRef}
-        source={{ uri: 'https://pflegekammer-rlp.de/' }}
-        injectedJavaScript={hideSearchInputJS}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        startInLoadingState={true}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          Alert.alert("WebView Error", nativeEvent.description);
-        }}
-        onNavigationStateChange={navState => {
-          setCanGoBack(navState.canGoBack);
-        }}
-      />
-      {canGoBack && (
-        <TouchableOpacity style={styles.backButton} onPress={() => webViewRef.current?.goBack() }>
-            <Text style={styles.backButtonText}>Back</Text>
-        </TouchableOpacity>
+    <View style={styles.container}>
+      {isLoading ? (
+        <View style={styles.splashContainer}>
+          <Image 
+            source={require('./assets/splash.png')} // Replace with the path to your splash image
+            style={styles.splashImage}
+            resizeMode="contain"
+          />
+        </View>
+      ) : (
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+          <WebView
+            ref={webViewRef}
+            source={{ uri: 'https://pflegekammer-rlp.de/wp-login.php?ismobileapp=1' }}
+            injectedJavaScript={hideSearchInputJS}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={true}
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              Alert.alert("WebView Error", nativeEvent.description);
+            }}
+            onNavigationStateChange={navState => {
+              setCanGoBack(navState.canGoBack);
+            }}
+          />
+          {canGoBack && (
+            <TouchableOpacity style={styles.backButton} onPress={() => webViewRef.current?.goBack()}>
+              <Text style={styles.backButtonText}>Back</Text>
+            </TouchableOpacity>
+          )}
+        </SafeAreaView>
       )}
-  </SafeAreaView>
+    </View>
   );
+  
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  splashContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  splashImage: {
+    width: '100%',
+    height: '100%',
   },
   backButton: {
     position: 'absolute',
@@ -137,5 +172,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
 
 export default App;
